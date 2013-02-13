@@ -167,18 +167,21 @@ class prr_svm {
 				$total += ($p['qty'] * $this->p($p['price']));
 			}
 
-			$shipping_cost = ($order->info['shipping_cost'] - $order->info['shipping_tax']);
-			$payment->addProduct(
-				$order->info['shipping_method'],     // tuotteen otsikko
-				TEXT_PRR_SVM_SHIPPING_MODEL,         // tuotekoodi
-				1,                                   // tuotteiden määrä
-				$this->p($shipping_cost),       // tuotteen hinta (/kappale)
-				round((($order->info['shipping_cost'] / $shipping_cost) - 1) * 100,2),    // Veroprosentti
-				"0.00",         // Alennusprosentti
-				Verkkomaksut_Module_Rest_Product::TYPE_POSTAL	// Tuotetyyppi			
-			);
-			// Pidä kirjaa tilauksen arvosta
-			$total += $this->p($shipping_cost);
+			// Skippaa toimituskulut jos ilmainen toimitus
+			if ($order->info['shipping_cost'] > 0) {
+				$shipping_cost = ($order->info['shipping_cost'] - $order->info['shipping_tax']);
+				$payment->addProduct(
+					$order->info['shipping_method'],     // tuotteen otsikko
+					TEXT_PRR_SVM_SHIPPING_MODEL,         // tuotekoodi
+					1,                                   // tuotteiden määrä
+					$this->p($shipping_cost),       // tuotteen hinta (/kappale)
+					round((($order->info['shipping_cost'] / $shipping_cost) - 1) * 100,2),    // Veroprosentti
+					"0.00",         // Alennusprosentti
+					Verkkomaksut_Module_Rest_Product::TYPE_POSTAL	// Tuotetyyppi			
+				);
+				// Pidä kirjaa tilauksen arvosta
+				$total += $this->p($shipping_cost);
+			}
 
 			// Yhdistä jäljelle jäänyt summa yhdeksi käsittleykuluksi
 			$total = $this->p(($order->info['total'] - $order->info['tax']) - $total);

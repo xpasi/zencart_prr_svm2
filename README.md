@@ -31,5 +31,5 @@ Tuki
 ------------
 Tukea ja modulin kustomointia voi tarvittaessa pyytää sähköpostilla p@prr.fi
 
-.
-*&copy;Copyright 2013, Projekti Rajala. All rights reserved.*
+------------
+*Copyright &copy; 2013, Projekti Rajala*
