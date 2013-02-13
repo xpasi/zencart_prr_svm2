@@ -109,6 +109,9 @@ class prr_svm {
 	function before_process() {
 		global $messageStack, $order;
 
+		// SVM moduli ei lisää "huijausyritys" kertoja.
+		$_SESSION['payment_attempt'] = $_SESSION['payment_attempt'] - 1;
+
 		$Lang = CFG_PRR_SVM_DEFAULT_LANGUAGE;
 		$zl = strtoupper($_SESSION['languages_code']);
 		if ($zl == 'FIN' || $zl == 'FI') $Lang = "fi_FI";
