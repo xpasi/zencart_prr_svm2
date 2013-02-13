@@ -11,7 +11,8 @@ Sisältää myös sivulaatikon, joka generoi kauppiastunnisteen perusteella käy
 Asennus
 ------------
 
-1. Kopioi tiedostot kauppaan niin kuin ne ovat tässä asennuspaketissa.
+1. Kopioi includes hakemisto kauppaan sellaisenaan. Asennus ei ylikirjoita tiedostoja
+   - Kopioi prr_svm_handler.php tiedosto kaupan juureen (eli sinne missä index.php sijaitsee)
 2. Asenna moduli normaalisti ZenCartin ylläpidossa.
    - Oletusasetukset mahdollistavat modulin testauksen.
    - Aseta tilauksen tilat sopiviksi.
@@ -21,6 +22,10 @@ Asennus
      Käsittelykuluilla tarkoitetaan kaikkia ot_total (eli loppusummaan vaikuttavia) moduleita.
      ZenCart ei tallenna tätä tietoa tilausta luodessaan eikä sitä voida päätellä luotettavasti jälkikäteen.
 
+Loki
+------------
+
+Moduli tallentaa logs/ (tai cache/ jos logs hakemistoa ei ole) kaikki virheelliset maksuvahvistus yritykset. Tulivat ne sitten Suomen verkkomaksuilta tai joltain muulta taholta (huijaus yritys).
 
 Tuki
 ------------
