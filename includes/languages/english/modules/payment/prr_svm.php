@@ -18,7 +18,7 @@
  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-define('TEXT_PRR_SVM_PAYMENT_NAME','Suomen verkkomaksut');
+define('TEXT_PRR_SVM_PAYMENT_NAME','Suomen Verkkomaksut');
 define('TEXT_PRR_SVM_PAYMENT_DESCRIPTION','Pay through any Finnish bank or several other methods.');
 
 define('TEXT_PRR_SVM_SHIPPING_MODEL','Shipping');
