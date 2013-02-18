@@ -39,7 +39,7 @@ class prr_svm {
 		}
 
 		if (is_object($order)) $this->update_status();
-
+		//if ($_SERVER['REMOTE_ADDR'] != '80.220.212.245') $this->enabled = false;
 	}
 
 	// class methods
