@@ -26,4 +26,4 @@ define('TEXT_PRR_SVM_HANDLING_NAME','Other additional costs or discounts (For mo
 define('TEXT_PRR_SVM_HANDLING_MODEL','KULUT');
 
 define('TEXT_PRR_SVM_ERROR_NOT_VALID','An error occured while confirming the payment! If your account has been charged, please contact our customer service!');
-define('TEXT_PRR_SVM_ERROR_SENDING_PAYMENT','Error while sending payment data! Please try again, or if the problem persists, please email our customer service and include the following error message: ');
+define('TEXT_PRR_SVM_ERROR_SENDING_PAYMENT','Suomen Verkkomaksut payment service has been disabled due to an error! Please email our customer service and include the following error message: ');

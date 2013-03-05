@@ -23,6 +23,7 @@
 
 class prr_svm {
 	var $code, $title, $description, $enabled, $_check, $sort_order, $config;
+	private $selection_done = false;
 
 	// class constructor
 	function prr_svm() {
@@ -39,7 +40,8 @@ class prr_svm {
 		}
 
 		if (is_object($order)) $this->update_status();
-
+		$this->form_action_url = $_SESSION['prr']['svm']['url'];
+		//if ($_SERVER['REMOTE_ADDR'] != '80.220.212.245') $this->enabled = false;
 	}
 
 	// class methods
@@ -69,57 +71,16 @@ class prr_svm {
 	}
 
 	function selection() {
-		return array('id' => $this->code,
-										'module' => $this->title);
-	}
-
-	function pre_confirmation_check() {
-		return false;
-	}
-
-	function confirmation() {
-		return false;
-	}
-
-	function process_button() {
-		// Maksua ei lähetetty
-		$_SESSION['prr']['svm']['payment_sent'] = false;
-		return false;
-	}
-
-	function p($i) {
-		// Format price
-		return number_format(round($i,2),2);
-	}
-
-	// Reserves an ID form the DB
-	function order_id() {
-		global $db;
-		if (empty($this->order_id)) {
-			$id = $db->Execute('SELECT `id` FROM `' . TABLE_SUOMENPANKIT . '` WHERE `referid`="0" AND `session_id`="' . session_id() . '"'); // Check if we already have an ID field
-			$tid = $id->fields['id'];
-			if ($tid == '') {  // If not, we create a new one
-				$db->Execute("INSERT INTO `" . TABLE_SUOMENPANKIT . "` (`session_id`) VALUES ('" . session_id() . "')"); // Make the reservation
-				$tid = $db->insert_ID();
-			}
-			$this->order_id = $tid;
-		}
-		return $this->order_id;
-	}
-
-	function before_process() {
 		global $messageStack, $order;
 
-		// SVM moduli ei lisää "huijausyritys" kertoja.
-		$_SESSION['payment_attempt'] = $_SESSION['payment_attempt'] - 1;
+		if ($this->selection_done == false) {
+			$this->selection_done = true;
+			$Lang = CFG_PRR_SVM_DEFAULT_LANGUAGE;
+			$zl = strtoupper($_SESSION['languages_code']);
+			if ($zl == 'FIN' || $zl == 'FI') $Lang = "fi_FI";
+			if ($zl == 'SWE' || $zl == 'SW' || $zl == 'SE'  || $zl == 'SV') $Lang = "sv_SE";
+			if ($zl == 'ENG' || $zl == 'EN') $Lang = "en_US";
 
-		$Lang = CFG_PRR_SVM_DEFAULT_LANGUAGE;
-		$zl = strtoupper($_SESSION['languages_code']);
-		if ($zl == 'FIN' || $zl == 'FI') $Lang = "fi_FI";
-		if ($zl == 'SWE' || $zl == 'SW' || $zl == 'SE'  || $zl == 'SV') $Lang = "sv_SE";
-		if ($zl == 'ENG' || $zl == 'EN') $Lang = "en_US";
-
-		if ($_SESSION['prr']['svm']['payment_sent'] != true) {
 			// Lähetä maksu
 
 			$link = (ENABLE_SSL == 'false') ? HTTP_SERVER . '/' . DIR_WS_CATALOG : HTTPS_SERVER . '/' . DIR_WS_HTTPS_CATALOG;
@@ -155,10 +116,10 @@ class prr_svm {
 				$id = explode(':',$p['id']);
 				// Jos mallia ei ole asetettu, käytä sisäistä ID:tä
 				$model = ($p['model'] != '') ? $p['model'] : 'ID#' . $id[0];
-				
+
 				// Verollinen hinta
 				$price = $p['price'] + (($p['price'] / 100) * $p['tax']); 				
-				
+			
 				$payment->addProduct(
 					$p['name'],     // tuotteen otsikko
 					$model,         // tuotekoodi
@@ -195,7 +156,6 @@ class prr_svm {
 				if (CFG_PRR_SVM_GENERIC_VAT > 0) {
 					$extra_tax = zen_get_tax_rate(CFG_PRR_SVM_GENERIC_VAT, $order->delivery['country']['id'], $order->delivery['zone_id']);
 				}
-
 				$payment->addProduct(
 					TEXT_PRR_SVM_HANDLING_NAME,     				// tuotteen otsikko
 					TEXT_PRR_SVM_HANDLING_MODEL,							// tuotekoodi
@@ -211,7 +171,6 @@ class prr_svm {
 			// kieli englanniksi. Oletuksena kieli on suomi. Katso muut mahdollisuudet
 			// PHP-luokasta.
 			$payment->setLocale($Lang);
-
 			$payment->setVatMode(1);
 
 			// Lähetetään maksu Suomen Verkkomaksujen palveluun ja käsitellään mahdolliset virheet
@@ -219,36 +178,74 @@ class prr_svm {
 
 			try {
 				$result = $module->processPayment($payment);
+				$_SESSION['prr']['svm']['payment_sent'] = true;
+				$_SESSION['prr']['svm']['url'] = $result->getUrl();
+				$_SESSION['prr']['svm']['token'] = $result->getToken();
 			} catch (Verkkomaksut_Exception $e) {
 				// Jos virhe, mene maksutapa sivulle
 				$_SESSION['prr']['svm']['payment_sent'] = false;
-				$messageStack->add_session('checkout_payment', TEXT_PRR_SVM_ERROR_SENDING_PAYMENT . $e->getMessage(), 'error');
-				header('location: ' . zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
-				die();
+				unset($_SESSION['prr']['svm']['url']);
+				unset($_SESSION['prr']['svm']['token']);
+				$messageStack->add('checkout_payment', TEXT_PRR_SVM_ERROR_SENDING_PAYMENT . $e->getMessage(), 'error');
 			}
+		}
+		if ($_SESSION['prr']['svm']['payment_sent']) {
+				return array('id' => $this->code,
+													'module' => $this->title);
+		}
+	}
 
-			// Kerro että maksu on lähetetty
-			$_SESSION['prr']['svm']['payment_sent'] = true;
-			// Mutta ei mennyt vielä läpi
-			$_SESSION['prr']['svm']['payment_recieved'] = false;
-			// Käytetään Suomen Verkkomaksujen palauttamaa url-osoitetta maksun suorittamiselle
-			// halutulla tavalla. Tässä käyttäjä ohjataan välittömästi saatuun osoitteeseen.
-			header("Location: {$result->getUrl()}");
-			die();
-		} else {
-			// Toinen läpivienti, tällä kertaa maksu on lähetetty ja nyt tarkastetaan onko se oikeasti mennyt läpi
-			$module = new Verkkomaksut_Module_Rest(CFG_PRR_SVM_SELLER_ID, CFG_PRR_SVM_PASSWORD);
-			if ($module->confirmPayment($_GET["ORDER_NUMBER"], $_GET["TIMESTAMP"], $_GET["PAID"], $_GET["METHOD"], $_GET["RETURN_AUTHCODE"])) {
-				// On mennyt läpi!
-				$_SESSION['prr']['svm']['payment_recieved'] = true;
-			} else {
-				$_SESSION['prr']['svm']['payment_recieved'] = false;
-				// Maksukuittaus ei ollut validi, mahdollinen huijausyritys
-				$messageStack->add_session('checkout_payment', TEXT_PRR_SVM_ERROR_NOT_VALID, 'error');
-				// Ohjaa selain maksutavan valintaan.
-				header('location: ' . zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
-				die();
+	function pre_confirmation_check() {
+		return false;
+	}
+
+	function confirmation() {
+		return false;
+	}
+
+
+	function process_button() {
+		if (CFG_PRR_SVM_INTEGRATE == "Yes" && $_GET['main_page'] == 'checkout_confirmation' && $_SESSION['prr']['svm']['payment_sent'] && $_SESSION['prr']['svm']['token'] != '') {
+			$file = dirname(__FILE__) . '/SVM_checkout_integration.html';
+			if (file_exists($file)) return str_replace('[:PRR_SVM_TOKEN:]',$_SESSION['prr']['svm']['token'],file_get_contents($file));
+		}
+		return false;
+	}
+
+	function p($i) {
+		// Format price
+		return number_format(round($i,2),2);
+	}
+
+	// Reserves an ID form the DB
+	function order_id() {
+		global $db;
+		if (empty($this->order_id)) {
+			$id = $db->Execute('SELECT `id` FROM `' . TABLE_SUOMENPANKIT . '` WHERE `referid`="0" AND `session_id`="' . session_id() . '"'); // Check if we already have an ID field
+			$tid = $id->fields['id'];
+			if ($tid == '') {  // If not, we create a new one
+				$db->Execute("INSERT INTO `" . TABLE_SUOMENPANKIT . "` (`session_id`) VALUES ('" . session_id() . "')"); // Make the reservation
+				$tid = $db->insert_ID();
 			}
+			$this->order_id = $tid;
+		}
+		return $this->order_id;
+	}
+
+	function before_process() {
+		global $messageStack;
+		// Tarkastetaan onko maksu oikeasti mennyt läpi
+		$module = new Verkkomaksut_Module_Rest(CFG_PRR_SVM_SELLER_ID, CFG_PRR_SVM_PASSWORD);
+		if ($module->confirmPayment($_GET["ORDER_NUMBER"], $_GET["TIMESTAMP"], $_GET["PAID"], $_GET["METHOD"], $_GET["RETURN_AUTHCODE"])) {
+			// On mennyt läpi!
+			$_SESSION['prr']['svm']['payment_recieved'] = true;
+		} else {
+			$_SESSION['prr']['svm']['payment_recieved'] = false;
+			// Maksukuittaus ei ollut validi, mahdollinen huijausyritys
+			$messageStack->add_session('checkout_payment', TEXT_PRR_SVM_ERROR_NOT_VALID, 'error');
+			// Ohjaa selain maksutavan valintaan.
+			header('location: ' . zen_href_link(FILENAME_CHECKOUT_PAYMENT, '', 'SSL'));
+			die();
 		}
 		return false;
 	}
@@ -306,6 +303,15 @@ class prr_svm {
 				'configuration_value' => '6pKF4jkv97zmqBJ3ZL8gUw5DfT2NMQ',
 				'configuration_group_id' => 6,
 				'sort_order' => count($cfg)
+			);
+			$cfg[] = array(
+				'configuration_key' => 'CFG_PRR_SVM_INTEGRATE',
+				'configuration_title' => 'Kassa integrointi',
+				'configuration_description' => 'Integroidaanko maksutavan valinta kassan viimeiseen vaiheeseen?',
+				'configuration_value' => 'No',
+				'configuration_group_id' => 6,
+				'sort_order' => count($cfg),
+				'set_function' => "zen_cfg_select_option(array('No','Yes'), "
 			);
 			$cfg[] = array(
 				'configuration_key' => 'CFG_PRR_SVM_DEFAULT_LANGUAGE',

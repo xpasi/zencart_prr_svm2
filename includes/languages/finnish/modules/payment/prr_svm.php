@@ -26,4 +26,4 @@ define('TEXT_PRR_SVM_HANDLING_NAME','Muut kulut ja alennukset (katso tarkemmat t
 define('TEXT_PRR_SVM_HANDLING_MODEL','KULUT');
 
 define('TEXT_PRR_SVM_ERROR_NOT_VALID','Maksun varmistamisessa tapahtui virhe! Mikäli maksu on kuitenkin veloitettu, ole hyvä ja ota yhteyttä asiakaspalveluumme!');
-define('TEXT_PRR_SVM_ERROR_SENDING_PAYMENT','Maksutietojen lähetyksessä tapahtui virhe! Yritä uudelleen tai jos ongelma toistuu, ole yhteydessä asiakaspalveluumme ja ilmoita seuraava virheilmoitus: ');
+define('TEXT_PRR_SVM_ERROR_SENDING_PAYMENT','Suomen verkkomaksut maksutapa ei ole käytössä koska maksutietojen käsittelyssä tapahtui virhe! Ole yhteydessä asiakaspalveluumme ja ilmoita seuraava virheilmoitus: ');
