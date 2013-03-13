@@ -41,7 +41,6 @@ class prr_svm {
 
 		if (is_object($order)) $this->update_status();
 		$this->form_action_url = $_SESSION['prr']['svm']['url'];
-		//if ($_SERVER['REMOTE_ADDR'] != '80.220.212.245') $this->enabled = false;
 	}
 
 	// class methods
@@ -71,10 +70,18 @@ class prr_svm {
 	}
 
 	function selection() {
+		return array('id' => $this->code,
+											'module' => $this->title);
+	}
+
+	function pre_confirmation_check() {
+		return false;
+	}
+
+	function confirmation() {
 		global $messageStack, $order;
 
-		if ($this->selection_done == false) {
-			$this->selection_done = true;
+
 			$Lang = CFG_PRR_SVM_DEFAULT_LANGUAGE;
 			$zl = strtoupper($_SESSION['languages_code']);
 			if ($zl == 'FIN' || $zl == 'FI') $Lang = "fi_FI";
@@ -82,7 +89,6 @@ class prr_svm {
 			if ($zl == 'ENG' || $zl == 'EN') $Lang = "en_US";
 
 			// Lähetä maksu
-
 			$link = (ENABLE_SSL == 'false') ? HTTP_SERVER . '/' . DIR_WS_CATALOG : HTTPS_SERVER . '/' . DIR_WS_HTTPS_CATALOG;
 
 			// Luodaan olio mallintamaan kaikkia maksun paluuosoitteita
@@ -132,7 +138,6 @@ class prr_svm {
 				// Pidä kirjaa tilauksen arvosta
 				$total += ($p['qty'] * $this->p($price));
 			}
-
 			// Skippaa postikulut jos ilmainen toimitus!
 			if ($order->info['shipping_cost'] > 0) {
 				$shipping_tax_class = ((($order->info['shipping_cost'] / ($order->info['shipping_cost'] - $order->info['shipping_tax'])) -1) * 100);
@@ -188,19 +193,7 @@ class prr_svm {
 				unset($_SESSION['prr']['svm']['token']);
 				$messageStack->add('checkout_payment', TEXT_PRR_SVM_ERROR_SENDING_PAYMENT . $e->getMessage(), 'error');
 			}
-		}
-		if ($_SESSION['prr']['svm']['payment_sent']) {
-				return array('id' => $this->code,
-													'module' => $this->title);
-		}
-	}
 
-	function pre_confirmation_check() {
-		return false;
-	}
-
-	function confirmation() {
-		return false;
 	}
 
 
