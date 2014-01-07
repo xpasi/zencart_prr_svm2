@@ -1,29 +1,9 @@
 <?php
-/*
- prr_svm - Suomen verkkomaksut moduli ZenCart Verkkokauppaan
- @copyright Copyright 2013 Projekti Rajala <p@prr.fi>
- @copyright Copyright 2003-2013 Zen Cart Development Team
- @copyright Portions Copyright 2003 osCommerce
-
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License along
- with this program; if not, write to the Free Software Foundation, Inc.,
- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
-
 
 class prr_svm {
 	var $code, $title, $description, $enabled, $_check, $sort_order, $config;
 	private $selection_done = false;
+	public $methods = array();
 
 	// class constructor
 	function prr_svm() {
@@ -41,6 +21,22 @@ class prr_svm {
 
 		if (is_object($order)) $this->update_status();
 		$this->form_action_url = $_SESSION['prr']['svm']['url'];
+
+		$this->methods[1] = 'Nordea';
+		$this->methods[2] = 'Osuuspankki';
+		$this->methods[3] = 'Sampo Pankki';
+		$this->methods[4] = 'Tapiola';
+		$this->methods[5] = 'Ålandsbanken';
+		$this->methods[6] = 'Handelsbanken';
+		$this->methods[7] = 'Säästöpankit (POP, Aktia, Nooa)';
+		$this->methods[8] = 'Luottokunta';
+		$this->methods[9] = 'Paypal';
+		$this->methods[10] = 'S-Pankki';
+		$this->methods[11] = 'Klarna, Laskulla';
+		$this->methods[12] = 'Klarna, Osamaksulla';
+		$this->methods[13] = 'Collector (VANHA)';
+		$this->methods[18] = 'Joustoraha';
+		$this->methods[19] = 'Collector';
 	}
 
 	// class methods
@@ -249,7 +245,8 @@ class prr_svm {
 			// Maksukuittaus on validi
 			// Yhdistä väliaikainen tilaus no. varsinaiseen tilausnumeroon
 			$order_id = zen_db_input($_GET["ORDER_NUMBER"]);
-			$db->Execute('UPDATE ' . TABLE_SUOMENPANKIT . ' SET `orders_id`="' . $insert_id . '", `referid`="' . $order_id . '", `session_id`="" WHERE `session_id`="' . session_id() . '"');
+			$method = $this->methods[(int) $_GET["METHOD"]];
+			$db->Execute('UPDATE ' . TABLE_SUOMENPANKIT . ' SET `orders_id`="' . $insert_id . '", `referid`="' . $order_id . '", `method`="' . $method . '", `session_id`="" WHERE `session_id`="' . session_id() . '"');
 			// Resetoi käsittelyn jälkeen tieto maksun lähetyksestä
 			$_SESSION['prr']['svm']['payment_sent'] = false;
 		}
